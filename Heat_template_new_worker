@@ -1,0 +1,126 @@
+
+heat_template_version: 2013-05-23
+
+description: adding another worker 
+
+# Declare parameters 
+parameters:
+
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: 40e1794e-6471-4c9b-9327-2b762ca0c135
+
+  flavor:
+    type: string
+    label: Flavor
+    description: Type of instance (flavor) to be used
+    default: ACCHT18.normal
+
+  key:
+    type: string
+    label: Key name
+    description: Name of key-pair to be used for compute instance
+    default: group8key
+
+  public_network:
+    type: string
+    label: Public network name or ID
+    description: Public network with floating IP addresses.
+    default: Public External IPv4 Network
+
+# Resource allocation
+resources:
+  cluster_sg:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: cluster_sg
+      rules:
+        - protocol: icmp
+        - protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+ 
+  private_network:
+    type: OS::Neutron::Net
+
+  private_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: private_network }
+      cidr: 10.10.10.0/24
+      dns_nameservers:
+        - 130.238.164.6 
+        - 130.238.4.133 
+        - 130.238.7.10
+        - 130.239.1.90
+        - 129.16.1.53
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_network }
+
+  router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: router }
+      subnet: { get_resource: private_subnet }
+
+  instance_port0:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: private_network }
+      security_groups:
+        - { get_resource: cluster_sg }
+  instance_port1:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: private_network }
+      security_groups:
+        - { get_resource: cluster_sg }
+ 
+      
+      #workers 
+      
+       worker_instance0:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key }
+      #security_groups:
+      #  - { get_resource: cluster_sg }
+      networks:
+        - port: { get_resource: instance_port1 }
+      user_data: |
+        #!/bin/sh
+        echo "Hello, World!"
+        echo "<ADD-CLUSTER’s-PUBLIC-KEY>" >> /home/ubuntu/.ssh/authorized_keys
+        apt-get update -y
+        apt-get upgrade -y
+      user_data_format: RAW
+      
+
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_network }
+
+  floating_ip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: floating_ip }
+      port_id: { get_resource: instance_port0 } 
+
+# Output in case of successful booting
+outputs:
+    
+  worker_name:
+    description: Name of the instance
+    value: { get_attr: [worker_instance0, name] }
+  worker_ip:
+    description: IP address of the instance
+    value: { get_attr: [worker_instance0, first_address] }
