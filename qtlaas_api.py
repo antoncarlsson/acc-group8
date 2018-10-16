@@ -2,6 +2,11 @@ from flask import Flask, request, abort
 
 app = Flask(__name__)
 
+@app.route('/qtlaas/post')
+def start():
+    return 'TODO: inject files through API'
+
+
 @app.route('/qtlaas/start')
 def start():
     return 'TODO: Start QLTaaS'
