@@ -88,6 +88,20 @@ resources:
       network: { get_resource: private_network }
       security_groups:
         - { get_resource: cluster_sg } 
+
+  instance_port1:
+  type: OS::Neutron::Port
+  properties:
+    network: { get_resource: private_network }
+    security_groups:
+      - { get_resource: cluster_sg } 
+
+  instance_port2:
+  type: OS::Neutron::Port
+  properties:
+    network: { get_resource: private_network }
+    security_groups:
+      - { get_resource: cluster_sg } 
  #masters 
  
   spark_master:
@@ -118,7 +132,7 @@ resources:
       # security_groups:
       #   - { get_resource: cluster_sg }
       networks:
-        - port: { get_resource: instance_port0 }
+        - port: { get_resource: instance_port1 }
       user_data: |
         #!/bin/sh
         echo "Hello, World!"
@@ -138,7 +152,7 @@ resources:
       # security_groups:
       #   - { get_resource: cluster_sg }
       networks:
-        - port: { get_resource: instance_port0 }
+        - port: { get_resource: instance_port2 }
       user_data: |
         #!/bin/sh
         echo "Hello, World!"
