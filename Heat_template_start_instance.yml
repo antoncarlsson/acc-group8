@@ -119,11 +119,29 @@ resources:
       #  - { get_resource: cluster_sg }
       networks:
         - port: { get_resource: instance_port0 }
-      user_data: |
-        #!/bin/sh
-        echo "Hello, World!"
-	apt-get update -y
-        apt-get upgrade -y
+      user_data: 
+      str_replace:
+       template: |	
+		        #!/bin/sh
+			echo "Hello, World!"
+			apt-get update -y
+			apt-get upgrade -y
+			echo ansible_ip group8ansiblemaster > /etc/hosts
+			echo sparkmaster_ip group8sparkmaster >> /etc/hosts
+			echo sparkworker_ip group8sparkworker >> /etc/hosts
+			echo group8ansiblemaster ansible_ssh_host=ansible_ip > /etc/ansible/hosts
+			echo group8sparkmaster ansible_ssh_host=sparkmaster_ip >> /etc/ansible/hosts
+			echo group8sparkworker ansible_ssh_host=sparkworker_ip >> /etc/ansible/hosts
+			echo [configNode] >> /etc/ansible/hosts
+			echo group8ansiblemaster ansible_connection=local ansible_user=ubuntu >> /etc/ansible/hosts
+			echo [sparkmaster] >> /etc/ansible/hosts
+			echo group8sparkmaster ansible_connection=local ansible_user=ubuntu >> /etc/ansible/hosts
+			echo [sparkworker] >> /etc/ansible/hosts
+			echo group8sparkworker ansible_connection=local ansible_user=ubuntu >> /etc/ansible/hosts
+		params:
+			ansible_ip: { get_attr: [ansible_master, networks, private, 0] }
+			sparkmaster_ip: { get_attr: [spark_master, networks, private, 0] }
+			sparkworker_ip: { get_attr: [worker_instance0, networks, private, 0] }
       user_data_format: RAW
       
       
