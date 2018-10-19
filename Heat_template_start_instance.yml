@@ -49,7 +49,7 @@ resources:
   cluster_sg:
     type: OS::Neutron::SecurityGroup
     properties:
-      name: cluster_sg
+      name: qtlaas
       rules:
         - protocol: icmp
         - protocol: tcp
@@ -87,20 +87,13 @@ resources:
     properties:
       network: { get_resource: private_network }
       security_groups:
-        - { get_resource: cluster_sg }
-  instance_port1:
-    type: OS::Neutron::Port
-    properties:
-      network: { get_resource: private_network }
-      security_groups:
-        - { get_resource: cluster_sg }
- 
+        - { get_resource: cluster_sg } 
  #masters 
  
   spark_master:
     type: OS::Nova::Server
     properties:
-      image: { get_param: image }
+      image: { get_param: image2 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       #security_groups:
@@ -110,7 +103,6 @@ resources:
       user_data: |
         #!/bin/sh
         echo "Hello, World!"
-        echo "<ADD-CLUSTER’s-PUBLIC-KEY>" >> /home/ubuntu/.ssh/authorized_keys
         apt-add-repository -y ppa:ansible/ansible
         apt-get update -y
         apt-get upgrade -y
@@ -120,18 +112,17 @@ resources:
   ansible_master:
     type: OS::Nova::Server
     properties:
-      image: { get_param: image }
+      image: { get_param: image1 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       #security_groups:
       #  - { get_resource: cluster_sg }
       networks:
-        - port: { get_resource: instance_port1 }
+        - port: { get_resource: instance_port0 }
       user_data: |
         #!/bin/sh
         echo "Hello, World!"
-        echo "<ADD-CLUSTER’s-PUBLIC-KEY>" >> /home/ubuntu/.ssh/authorized_keys
-        apt-get update -y
+	apt-get update -y
         apt-get upgrade -y
       user_data_format: RAW
       
@@ -141,17 +132,16 @@ resources:
        worker_instance0:
     type: OS::Nova::Server
     properties:
-      image: { get_param: image }
+      image: { get_param: image3 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       #security_groups:
       #  - { get_resource: cluster_sg }
       networks:
-        - port: { get_resource: instance_port1 }
+        - port: { get_resource: instance_port0 }
       user_data: |
         #!/bin/sh
         echo "Hello, World!"
-        echo "<ADD-CLUSTER’s-PUBLIC-KEY>" >> /home/ubuntu/.ssh/authorized_keys
         apt-get update -y
         apt-get upgrade -y
       user_data_format: RAW
