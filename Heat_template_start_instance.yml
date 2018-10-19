@@ -90,18 +90,18 @@ resources:
         - { get_resource: cluster_sg } 
 
   instance_port1:
-  type: OS::Neutron::Port
-  properties:
-    network: { get_resource: private_network }
-    security_groups:
-      - { get_resource: cluster_sg } 
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: private_network }
+      security_groups:
+        - { get_resource: cluster_sg } 
 
   instance_port2:
-  type: OS::Neutron::Port
-  properties:
-    network: { get_resource: private_network }
-    security_groups:
-      - { get_resource: cluster_sg } 
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: private_network }
+      security_groups:
+        - { get_resource: cluster_sg } 
  #masters 
  
   spark_master:
