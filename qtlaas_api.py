@@ -1,21 +1,23 @@
 from flask import Flask, request, abort
-from keystoneauth1.identity import v2
+from keystoneauth1.identity import v3
 from keystoneauth1 import session
 import heatclient
 from heatclient import client as heat_client
 from heatclient.common import template_utils
 import sys
+from getpass import getpass
 
 keystone_settings = {
-    'region_name': 'UPPMAX',
-    'project_id': '2344cddf33a1412b846290a9fb90b762',
-    'project_name': 'SNIC 2018/10-30',
-    'user_domain_name': 'snic',
-    'username': sys.argv[1],
-    'password': sys.argv[2]
+	'auth_url': 'https://uppmax.cloud.snic.se:5000/v3',
+#	'region_name': 'UPPMAX',
+	'project_id': '2344cddf33a1412b846290a9fb90b762',
+	'project_name': 'SNIC 2018/10-30',
+	'user_domain_name': 'snic',
+	'username': sys.argv[1],
+	'password': getpass('Password: ')
 }
 
-keystone_auth = v2.Password(**keystone_settings)
+keystone_auth = v3.Password(**keystone_settings)
 keystone_session = session.Session(auth=keystone_auth)
 auth_url = 'https://uppmax.cloud.snic.se:5000/v3'
 kwargs = {
@@ -35,7 +37,7 @@ def upload_file():
 
 @app.route('/qtlaas/start')
 def start():
-    stack_name = sys.argv[3]
+    stack_name = sys.argv[2]
     template_name = 'Heat_template_start_instance.yml'
     files, template = template_utils.process_template_path(template_name)
 
