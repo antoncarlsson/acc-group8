@@ -122,7 +122,7 @@ resources:
       user_data: 
         str_replace:
           template: |
-		        #!/bin/sh
+            #!/bin/sh
             echo "Hello, World!"
             apt-get update -y
             apt-get upgrade -y
@@ -139,9 +139,9 @@ resources:
             echo [sparkworker] >> /etc/ansible/hosts
             echo group8sparkworker ansible_connection=local ansible_user=ubuntu >> /etc/ansible/hosts
 		      params:
-		        ansible_ip: { get_attr: [ansible_master, networks, private, 0] }
-		        sparkmaster_ip: { get_attr: [spark_master, networks, private, 0] }
-		        sparkworker_ip: { get_attr: [worker_instance0, networks, private, 0] }
+            ansible_ip: { get_attr: [ansible_master, networks, private, 0] }
+            sparkmaster_ip: { get_attr: [spark_master, networks, private, 0] }
+            sparkworker_ip: { get_attr: [worker_instance0, networks, private, 0] }
             user_data_format: RAW
       
       
