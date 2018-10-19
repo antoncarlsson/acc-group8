@@ -121,7 +121,7 @@ resources:
         - port: { get_resource: instance_port0 }
       user_data: 
         str_replace:
-          template: |	
+          template: |
 		        #!/bin/sh
             echo "Hello, World!"
             apt-get update -y
