@@ -1,15 +1,51 @@
 from flask import Flask, request, abort
+from keystoneauth1.identity import v2
+from keystoneauth1 import session
+import heatclient
+from heatclient import client as heat_client
+from heatclient.common import template_utils
+import sys
+
+keystone_settings = {
+    'region_name': 'UPPMAX',
+    'project_id': '2344cddf33a1412b846290a9fb90b762',
+    'project_name': 'SNIC 2018/10-30',
+    'user_domain_name': 'snic',
+    'username': sys.argv[1],
+    'password': sys.argv[2]
+}
+
+keystone_auth = v2.Password(**keystone_settings)
+keystone_session = session.Session(auth=keystone_auth)
+auth_url = 'https://uppmax.cloud.snic.se:5000/v3'
+kwargs = {
+    'auth_url': auth_url,
+    'session': keystone_session,
+    'auth': keystone_auth,
+    'service_type': 'orchestration'
+}
+
+hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
 
-@app.route('/qtlaas/post')
-def start():
+@app.route('/qtlaas/upload')
+def upload_file():
     return 'TODO: inject files through API'
-
 
 @app.route('/qtlaas/start')
 def start():
-    return 'TODO: Start QLTaaS'
+    stack_name = sys.argv[3]
+    template_name = 'Heat_template_start_instance.yml'
+    files, template = template_utils.process_template_path(template_name)
+
+    try:
+        hc.stacks.create(stack_name=stack_name, template=template, files=files)
+    except heatclient.exc.HTTPConflict as e:
+        print("Stack already exists : " , e.error , stack_name)
+    except heatclient.exc.HTTPBadRequest as e:
+        print("Bad request : ", e.error)
+
 
 @app.route('/qtlaas/stop')
 def stop():
@@ -20,7 +56,7 @@ def number_of_workers():
     return 'TODO: Return number of workers'
 
 @app.route('/qtlaas/workers/<int:no_workers>', methods=['POST', 'DELETE'])
-def add_workers(no_workers):
+def resize(no_workers):
     if no_workers < 1:
         abort(400, 'Too few workers to be added/removed.')
     else: 
