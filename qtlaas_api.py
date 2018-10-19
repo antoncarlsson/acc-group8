@@ -48,6 +48,8 @@ def start():
     except heatclient.exc.HTTPBadRequest as e:
         print("Bad request : ", e.error)
 
+    return 'Started QTLaaS'
+
 
 @app.route('/qtlaas/stop')
 def stop():
