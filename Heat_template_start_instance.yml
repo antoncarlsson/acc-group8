@@ -182,17 +182,24 @@ outputs:
   spark_ip:
     description: IP address of the instance
     value: { get_attr: [spark_master, first_address, floating_ip, floating_ip_address] }
+  spark_private_ip:
+    description: privateIP address of the instance
+    value: { get_attr: [spark_master, first_address] }
   
   ansible_name:
     description: Name of the ansible master
     value: { get_attr: [ansible_master, name] }
   ansible_ip:
     description: IP address of the instance
-    value: { get_attr: [ansible_master, first_address, floating_ip, floating_ip_address] }
-    
+    value: { get_attr: [ansible_master, first_address,floating_ip, floating_ip_address] }
+  ansible_private_ip:
+    description: privateIP address of the instance
+    value: { get_attr: [ansible_master, first_address] }
+  
   worker_name:
     description: Name of the spark worker
     value: { get_attr: [worker_instance0, name] }
   worker_ip:
     description: IP address of the instance
     value: { get_attr: [worker_instance0, first_address] }
+  
