@@ -7,11 +7,24 @@ description: Simple template to deploy a single compute instance
 # Declare parameters 
 parameters:
 
-  image:
+  image1:
     type: string
     label: Image name or ID
-    description: Image to be used for compute instance
-    default: 40e1794e-6471-4c9b-9327-2b762ca0c135
+    description: Image Ansible Master
+    default: 6832b560-a410-4040-ae22-b8d9e9bfcd26
+
+  image2:
+    type: string
+    label: Image name or ID
+    description: Image Spark Master
+    default: c1502f60-02c5-4bee-8849-536ffb36b8fe
+
+  image3:
+    type: string
+    label: Image name or ID
+    description: Image Spark Worker
+    default: 0d09edc1-70c8-433b-9b1f-5bc98b425636
+
 
   flavor:
     type: string
