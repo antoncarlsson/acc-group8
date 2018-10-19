@@ -96,8 +96,8 @@ resources:
       image: { get_param: image2 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
-      security_groups:
-        - { get_resource: cluster_sg }
+      # security_groups:
+      #   - { get_resource: cluster_sg }
       networks:
         - port: { get_resource: instance_port0 }         
       user_data: |
@@ -115,8 +115,8 @@ resources:
       image: { get_param: image1 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
-      security_groups:
-        - { get_resource: cluster_sg }
+      # security_groups:
+      #   - { get_resource: cluster_sg }
       networks:
         - port: { get_resource: instance_port0 }
       user_data: |
@@ -135,8 +135,8 @@ resources:
       image: { get_param: image3 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
-      security_groups:
-        - { get_resource: cluster_sg }
+      # security_groups:
+      #   - { get_resource: cluster_sg }
       networks:
         - port: { get_resource: instance_port0 }
       user_data: |
