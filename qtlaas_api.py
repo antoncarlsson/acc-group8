@@ -42,13 +42,13 @@ def start():
     files, template = template_utils.process_template_path(template_name)
 
     try:
-        hc.stacks.create(stack_name=stack_name, template=template, files=files)
+        output = hc.stacks.create(stack_name=stack_name, template=template, files=files)
     except heatclient.exc.HTTPConflict as e:
         print("Stack already exists : " , e.error , stack_name)
     except heatclient.exc.HTTPBadRequest as e:
         print("Bad request : ", e.error)
 
-    return 'Started QTLaaS'
+    return output
 
 
 @app.route('/qtlaas/stop')
