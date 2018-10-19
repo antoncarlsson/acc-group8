@@ -43,7 +43,7 @@ def start():
 
     try:
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
-        stack_id = hc.stacks.list({name: stack_name})
+        stack_id = hc.stacks.list(filters={'name': stack_name})
         return hc.stacks.output_list(stack_id)
     except heatclient.exc.HTTPConflict as e:
         print("Stack already exists : " , e.error , stack_name)
