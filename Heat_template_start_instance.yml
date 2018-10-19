@@ -11,19 +11,19 @@ parameters:
     type: string
     label: Image name or ID
     description: Image Ansible Master
-    default: 6832b560-a410-4040-ae22-b8d9e9bfcd26
+    default: f5bafa71-98a3-41f8-823a-1d5d0e0cb2e0
 
   image2:
     type: string
     label: Image name or ID
     description: Image Spark Master
-    default: c1502f60-02c5-4bee-8849-536ffb36b8fe
+    default: 38c0f2a6-5810-4aa7-a202-7146154ce434
 
   image3:
     type: string
     label: Image name or ID
     description: Image Spark Worker
-    default: 0d09edc1-70c8-433b-9b1f-5bc98b425636
+    default: adedec79-c226-43d1-a6e4-6b457b874f49
 
 
   flavor:
