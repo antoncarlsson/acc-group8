@@ -180,14 +180,14 @@ resources:
 # Output in case of successful booting
 outputs:
 
- spark_name:
+  spark_name:
     description: Name of the instance
     value: { get_attr: [spark_master, name] }
   spark_ip:
     description: IP address of the instance
     value: { get_attr: [spark_master, first_address, floating_ip, floating_ip_address] }
   
- ansible_name:
+  ansible_name:
     description: Name of the instance
     value: { get_attr: [ansible_master, name] }
   ansible_ip:
