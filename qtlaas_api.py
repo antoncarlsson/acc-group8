@@ -47,9 +47,9 @@ def start():
         stack_output = hc.stacks.output_list(stack_id)
 
         result = {}
-        for key, value in stack_output.items():
-            if key == 'output_key':
-                result[value] =  hc.stacks.output_show(stack_id, key)
+        for line in stack_output[1]:
+            output_value = line['output_key']
+            result[output_value] =  hc.stacks.output_show(stack_id, output_value)
 
         return jsonify(result)
     except heatclient.exc.HTTPConflict as e:
