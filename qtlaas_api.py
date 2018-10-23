@@ -99,8 +99,9 @@ def start():
 
 @app.route('/qtlaas/stop')
 def stop():
-    stack_id = hc.stacks.list(filters={'stack_name': stack_name})
-    heatclient.stacks.delete(stack_id)
+    stacks = hc.stacks.list(filters={'stack_name': stack_name})
+    stack_id = next(stacks).id
+    hc.stacks.delete(stack_id)
     return 'Deletion complete'
 
 @app.route('/qtlaas/workers')
