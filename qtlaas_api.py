@@ -31,13 +31,14 @@ hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
 
+stack_name = sys.argv[2]
+
 @app.route('/qtlaas/upload')
 def upload_file():
     return 'TODO: inject files through API'
 
 @app.route('/qtlaas/start')
 def start():
-    stack_name = sys.argv[2]
     template_name = 'Heat_template_start_instance.yml'
     files, template = template_utils.process_template_path(template_name)
 
@@ -55,7 +56,9 @@ def start():
 
 @app.route('/qtlaas/stop')
 def stop():
-    return 'TODO: Stop QTLaaS'
+    stack_id = hc.stacks.list(filters={'stack_name': stack_name})
+    heatclient.stacks.delete(stack_id)
+    return 'Deletion complete'
 
 @app.route('/qtlaas/workers')
 def number_of_workers():
