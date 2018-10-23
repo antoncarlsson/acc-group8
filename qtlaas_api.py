@@ -6,6 +6,7 @@ from heatclient import client as heat_client
 from heatclient.common import template_utils
 import sys
 from getpass import getpass
+import time
 
 keystone_settings = {
 	'auth_url': 'https://uppmax.cloud.snic.se:5000/v3',
@@ -42,13 +43,14 @@ def start():
 
     try:
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
+        time.sleep(10)
         stacks = hc.stacks.list(filters={'stack_name': stack_name})
         print(stacks)
         stack = next(stacks)
         print(stack)
         print(stack.id)
         print(stack.status)
-        stack_output = hc.stacks.output_list(str(stack.id))
+        stack_output = hc.stacks.output_list(stack.id)
         print(stack_output)
 
         result = {}
@@ -57,7 +59,7 @@ def start():
             result[output_value] = hc.stacks.output_show(str(stack.id), output_value)
 
         while True:
-            if str(stack.status) == 'CREATE_COMPLETE':
+            if stack.status == 'CREATE_COMPLETE':
                 break
 
         return jsonify(result)
