@@ -7,6 +7,7 @@ from heatclient.common import template_utils
 import sys
 from getpass import getpass
 import time
+import os
 
 keystone_settings = {
 	'auth_url': 'https://uppmax.cloud.snic.se:5000/v3',
@@ -31,6 +32,29 @@ stack_name = sys.argv[2]
 hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
+
+def write_to_hosts_file(resp):
+    with open('hosts', 'w') as f:
+        f.write(resp['ansible_private_ip']['output_value'] + ' ' + resp['ansible_name']['output_value'])
+        f.write(resp['spark_private_ip']['output_value'] + ' ' + resp['spark_name']['output_value'])
+        f.write(resp['worker_ip']['output_value'] + ' ' + resp['worker_name']['output_value'])
+        os.system('scp -i group8key.pem hosts ' + resp['ansible_private_ip']['output_value'] + ':/etc/hosts')
+
+def write_to_ansible_hosts_file(resp):
+    with open('ansible', 'w') as f:
+        f.write(resp['ansible_name']['output_value'] + ' ansible_ssh_host=' + resp['ansible_private_ip']['output_value'])
+        f.write(resp['spark_name']['output_value'] + ' ansible_ssh_host=' + resp['spark_private_ip']['output_value'])
+        f.write(resp['worker_name']['output_value'] + ' ansible_ssh_host=' + resp['worker_ip']['output_value'])
+        f.write('[configNode]')
+        f.write(resp['ansible_name']['output_value'] + ' ansible_connection=local ansible_user=ubuntu')
+
+        f.write('[sparkmaster]')
+        f.write(resp['spark_name']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu')
+
+        f.write('[sparkworker]')
+        f.write(resp['worker_name']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu')
+        os.system('scp -i group8key.pem hosts ubuntu@' + resp['ansible_private_ip']['output_value'] + ':/etc/ansible/hosts')
+
 
 @app.route('/qtlaas/upload')
 def upload_file():
@@ -61,6 +85,9 @@ def start():
         for line in stack_output['outputs']:
             output_value = line['output_key']
             result[output_value] = hc.stacks.output_show(stack.id, output_value)
+
+        write_to_hosts_file(result)
+        write_to_ansible_hosts_file(result)
 
         return jsonify(result)
         # redirect('http://IP.TO.SPARK.MASTER:60060/', 302, jsonify(result))
