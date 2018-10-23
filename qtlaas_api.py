@@ -43,13 +43,17 @@ def start():
     try:
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
         stacks = hc.stacks.list(filters={'stack_name': stack_name})
-        stack_id = next(stacks).id
-        stack_output = hc.stacks.output_list(stack_id)
+        stack = next(stacks)
+        stack_output = hc.stacks.output_list(stack.id)
 
         result = {}
         for line in stack_output[1]:
             output_value = line['output_key']
-            result[output_value] =  hc.stacks.output_show(stack_id, output_value)
+            result[output_value] =  hc.stacks.output_show(stack.id, output_value)
+
+        while True:
+            if stack.status == 'CREATE_COMPLETE':
+                break
 
         return jsonify(result)
         # redirect('http://IP.TO.SPARK.MASTER:60060/', 302, jsonify(result))
