@@ -26,12 +26,10 @@ kwargs = {
     'auth': keystone_auth,
     'service_type': 'orchestration'
 }
-
+stack_name = sys.argv[2]
 hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
-
-stack_name = sys.argv[2]
 
 @app.route('/qtlaas/upload')
 def upload_file():
@@ -44,7 +42,8 @@ def start():
 
     try:
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
-        stack_id = hc.stacks.list(filters={'stack_name': stack_name})
+        stack_list = hc.stacks.list(filters={'stack_name': stack_name})
+        stack_id = stack_list[0].stack_id
         return hc.stacks.output_list(stack_id)
     except heatclient.exc.HTTPConflict as e:
         print("Stack already exists : " , e.error , stack_name)
