@@ -43,16 +43,21 @@ def start():
     try:
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
         stacks = hc.stacks.list(filters={'stack_name': stack_name})
+        print(stacks)
         stack = next(stacks)
-        stack_output = hc.stacks.output_list(stack.id)
+        print(stack)
+        print(stack.id)
+        print(stack.status)
+        stack_output = hc.stacks.output_list(str(stack.id))
+        print(stack_output)
 
         result = {}
         for line in stack_output['outputs']:
             output_value = line['output_key']
-            result[output_value] =  hc.stacks.output_show(stack.id, output_value)
+            result[output_value] = hc.stacks.output_show(str(stack.id), output_value)
 
         while True:
-            if stack.status == 'CREATE_COMPLETE':
+            if str(stack.status) == 'CREATE_COMPLETE':
                 break
 
         return jsonify(result)
