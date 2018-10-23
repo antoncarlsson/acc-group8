@@ -47,7 +47,7 @@ def start():
         stack_output = hc.stacks.output_list(stack_id)
 
         result = {}
-        for line in stack_output[1]:
+        for line in stack_output['outputs']:
             output_value = line['output_key']
             result[output_value] =  hc.stacks.output_show(stack_id, output_value)
 
