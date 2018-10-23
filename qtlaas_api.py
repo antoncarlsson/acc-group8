@@ -35,25 +35,25 @@ app = Flask(__name__)
 
 def write_to_hosts_file(resp):
     with open('hosts', 'w') as f:
-        f.write(resp['ansible_private_ip']['output_value'] + ' ' + resp['ansible_name']['output_value'])
-        f.write(resp['spark_private_ip']['output_value'] + ' ' + resp['spark_name']['output_value'])
-        f.write(resp['worker_ip']['output_value'] + ' ' + resp['worker_name']['output_value'])
-        os.system('scp -i group8key.pem hosts ' + resp['ansible_private_ip']['output_value'] + ':/etc/hosts')
+        f.write(resp['ansible_private_ip']['output']['output_value'] + ' ' + resp['ansible_name']['output']['output_value'])
+        f.write(resp['spark_private_ip']['output']['output_value'] + ' ' + resp['spark_name']['output']['output_value'])
+        f.write(resp['worker_ip']['output']['output_value'] + ' ' + resp['worker_name']['output']['output_value'])
+        os.system('scp -i group8key.pem hosts ' + resp['ansible_private_ip']['output']['output_value'] + ':/etc/hosts')
 
 def write_to_ansible_hosts_file(resp):
     with open('ansible', 'w') as f:
-        f.write(resp['ansible_name']['output_value'] + ' ansible_ssh_host=' + resp['ansible_private_ip']['output_value'])
-        f.write(resp['spark_name']['output_value'] + ' ansible_ssh_host=' + resp['spark_private_ip']['output_value'])
-        f.write(resp['worker_name']['output_value'] + ' ansible_ssh_host=' + resp['worker_ip']['output_value'])
+        f.write(resp['ansible_name']['output']['output_value'] + ' ansible_ssh_host=' + resp['ansible_private_ip']['output']['output_value'])
+        f.write(resp['spark_name']['output']['output_value'] + ' ansible_ssh_host=' + resp['spark_private_ip']['output']['output_value'])
+        f.write(resp['worker_name']['output']['output_value'] + ' ansible_ssh_host=' + resp['worker_ip']['output']['output_value'])
         f.write('[configNode]')
-        f.write(resp['ansible_name']['output_value'] + ' ansible_connection=local ansible_user=ubuntu')
+        f.write(resp['ansible_name']['output']['output_value'] + ' ansible_connection=local ansible_user=ubuntu')
 
         f.write('[sparkmaster]')
-        f.write(resp['spark_name']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu')
+        f.write(resp['spark_name']['output']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu')
 
         f.write('[sparkworker]')
-        f.write(resp['worker_name']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu')
-        os.system('scp -i group8key.pem hosts ubuntu@' + resp['ansible_private_ip']['output_value'] + ':/etc/ansible/hosts')
+        f.write(resp['worker_name']['output']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu')
+        os.system('scp -i group8key.pem hosts ubuntu@' + resp['ansible_private_ip']['output']['output_value'] + ':/etc/ansible/hosts')
 
 
 @app.route('/qtlaas/upload')
