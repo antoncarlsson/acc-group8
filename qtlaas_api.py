@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, redirect
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
 import heatclient
@@ -52,6 +52,7 @@ def start():
             result[output_value] =  hc.stacks.output_show(stack_id, output_value)
 
         return jsonify(result)
+        # redirect('http://IP.TO.SPARK.MASTER:60060/', 302, jsonify(result))
     except heatclient.exc.HTTPConflict as e:
         abort(400, 'Stack already exists : %s %s' % (e.error, stack_name))
     except heatclient.exc.HTTPBadRequest as e:
