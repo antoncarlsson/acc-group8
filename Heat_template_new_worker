@@ -1,126 +1,148 @@
 
-heat_template_version: 2013-05-23
+heat_template_version: 2018-10-23
 
-description: adding another worker 
-
-# Declare parameters 
+description: >
+  This is a very simple template that illustrates automatic scaling up and down
+  using OS::Heat::AutoScalingGroup. CPU load is generated for
+  15 mins after each instance is spawned, triggering a scale-up event.
+  Once the max number of instances has been reached and the CPU
+  load generation has finished, the number of instances will be scaled
+  back down to 1.
 parameters:
-
-  image:
+  key_name:
     type: string
-    label: Image name or ID
-    description: Image to be used for compute instance
-    default: 40e1794e-6471-4c9b-9327-2b762ca0c135
-
+    label: Key name
+    description: Keypair for authentication
+    default: group8key
   flavor:
     type: string
     label: Flavor
-    description: Type of instance (flavor) to be used
+    description: Flavor of the servers
     default: ACCHT18.normal
-
-  key:
+  image:
     type: string
-    label: Key name
-    description: Name of key-pair to be used for compute instance
-    default: group8key
-
-  public_network:
+    label: Image name or ID
+    description: Image used to boot the servers
+    default: c475d079-47cd-45b0-a0dc-d77fd04d07fa
+  public_net_id:
     type: string
-    label: Public network name or ID
-    description: Public network with floating IP addresses.
+    label: Public network ID
+    description: ID of the public network to use
     default: Public External IPv4 Network
 
-# Resource allocation
 resources:
-  cluster_sg:
-    type: OS::Neutron::SecurityGroup
-    properties:
-      name: cluster_sg
-      rules:
-        - protocol: icmp
-        - protocol: tcp
-          port_range_min: 22
-          port_range_max: 22
- 
-  private_network:
+  private_net:
     type: OS::Neutron::Net
-
+    properties:
+      admin_state_up: true
+      name: private_net
   private_subnet:
     type: OS::Neutron::Subnet
     properties:
-      network_id: { get_resource: private_network }
-      cidr: 10.10.10.0/24
-      dns_nameservers:
-        - 130.238.164.6 
-        - 130.238.4.133 
-        - 130.238.7.10
-        - 130.239.1.90
-        - 129.16.1.53
+      name: private_subnet
+      cidr: 192.168.10.0/24
+      dns_nameservers: [8.8.8.8, 8.8.4.4]
+      enable_dhcp: true
+      network_id: { get_resource: private_net }
   router:
     type: OS::Neutron::Router
     properties:
-      external_gateway_info:
-        network: { get_param: public_network }
-
-  router-interface:
+      name: router
+      admin_state_up: true
+  router_gw:
+    type: OS::Neutron::RouterGateway
+    properties:
+      network_id: { get_param: public_net_id }
+      router_id: { get_resource: router }
+  router_interface:
     type: OS::Neutron::RouterInterface
     properties:
       router_id: { get_resource: router }
-      subnet: { get_resource: private_subnet }
+      subnet_id: { get_resource: private_subnet }
 
-  instance_port0:
-    type: OS::Neutron::Port
+  cloud_config_stress:
+    type: OS::Heat::CloudConfig
     properties:
-      network: { get_resource: private_network }
-      security_groups:
-        - { get_resource: cluster_sg }
-  instance_port1:
-    type: OS::Neutron::Port
-    properties:
-      network: { get_resource: private_network }
-      security_groups:
-        - { get_resource: cluster_sg }
- 
-      
-      #workers 
-      
-       worker_instance0:
-    type: OS::Nova::Server
-    properties:
-      image: { get_param: image }
-      flavor: { get_param: flavor }
-      key_name: { get_param: key }
-      #security_groups:
-      #  - { get_resource: cluster_sg }
-      networks:
-        - port: { get_resource: instance_port1 }
-      user_data: |
-        #!/bin/sh
-        echo "Hello, World!"
-        echo "<ADD-CLUSTER’s-PUBLIC-KEY>" >> /home/ubuntu/.ssh/authorized_keys
-        apt-get update -y
-        apt-get upgrade -y
-      user_data_format: RAW
-      
+      cloud_config:
+        package_update: true
+        packages:
+          - stress
+        runcmd:
+          - stress --cpu 1 --timeout 15m
 
-
-  floating_ip:
-    type: OS::Neutron::FloatingIP
+  asg:
+    type: OS::Heat::AutoScalingGroup
+    depends_on: private_subnet
     properties:
-      floating_network: { get_param: public_network }
+      min_size: 1
+      max_size: 10
+      resource:
+        type: OS::Nova::Server
+        properties:
+          key_name: {get_param: key_name}
+          flavor: {get_param: flavor}
+          image: {get_param: image}
+          networks:
+            - network: { get_resource: private_net }
+          metadata: {"metering.stack": {get_param: "OS::stack_id"}}
+          user_data_format: RAW
+          user_data:
+            get_resource: cloud_config_stress
 
-  floating_ip_assoc:
-    type: OS::Neutron::FloatingIPAssociation
+  scale_up_policy:
+    type: OS::Heat::ScalingPolicy
     properties:
-      floatingip_id: { get_resource: floating_ip }
-      port_id: { get_resource: instance_port0 } 
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: asg}
+      cooldown: 60
+      scaling_adjustment: 1
+  scale_down_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: asg}
+      cooldown: 60
+      scaling_adjustment: '-1'
 
-# Output in case of successful booting
+  cpu_alarm_high:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-up if the average CPU > 50% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: 60
+      evaluation_periods: 1
+      threshold: 50
+      alarm_actions:
+        - {get_attr: [scale_up_policy, alarm_url]}
+      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+      comparison_operator: gt
+  cpu_alarm_low:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-down if the average CPU < 15% for 10 minutes
+      meter_name: cpu_util
+      statistic: avg
+      period: 600
+      evaluation_periods: 1
+      threshold: 15
+      alarm_actions:
+        - {get_attr: [scale_down_policy, alarm_url]}
+      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+      comparison_operator: lt
+
 outputs:
-    
-  worker_name:
-    description: Name of the instance
-    value: { get_attr: [worker_instance0, name] }
-  worker_ip:
-    description: IP address of the instance
-    value: { get_attr: [worker_instance0, first_address] }
+  scale_up_url:
+    description: >
+      Webhook URL to scale up the group.
+      You can invoke the scale-up operation by doing an HTTP POST to this URL.
+    value: {get_attr: [scale_up_policy, alarm_url]}
+  scale_dn_url:
+    description: >
+      Webhook URL to scale down the group.
+      You can invoke the scale-down operation by doing an HTTP POST to this URL.
+    value: {get_attr: [scale_down_policy, alarm_url]}
+  server_list:
+    description: >
+      List of server names that are part of the group.
+    value: {get_attr: [asg, outputs_list, name]}
