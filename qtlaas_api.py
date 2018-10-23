@@ -44,23 +44,23 @@ def start():
     try:
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
         time.sleep(10)
+
         stacks = hc.stacks.list(filters={'stack_name': stack_name})
-        print(stacks)
         stack = next(stacks)
-        print(stack)
-        print(stack.id)
-        print(stack.status)
-        stack_output = hc.stacks.output_list(stack.id)
-        print(stack_output)
+        
+        stack_status = stack.status
+        while stack_status == 'IN_PROGRESS':
+            stacks = hc.stacks.list(filters={'stack_name': stack_name})
+            stack = next(stacks)
+            stack_output = hc.stacks.output_list(stack.id)
+            print 'Build in progress, sleep for 5 seconds...'
+            time.sleep(5)
+            stack_status = stack.status
 
         result = {}
         for line in stack_output['outputs']:
             output_value = line['output_key']
-            result[output_value] = hc.stacks.output_show(str(stack.id), output_value)
-
-        while True:
-            if stack.status == 'CREATE_COMPLETE':
-                break
+            result[output_value] = hc.stacks.output_show(stack.id, output_value)
 
         return jsonify(result)
         # redirect('http://IP.TO.SPARK.MASTER:60060/', 302, jsonify(result))
