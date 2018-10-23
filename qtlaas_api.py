@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
 import heatclient
@@ -44,14 +44,18 @@ def start():
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
         stacks = hc.stacks.list(filters={'stack_name': stack_name})
         stack_id = next(stacks).id
-        print(hc.stacks.output_list(stack_id))
-        return "Success!"
-    except heatclient.exc.HTTPConflict as e:
-        print("Stack already exists : " , e.error , stack_name)
-    except heatclient.exc.HTTPBadRequest as e:
-        print("Bad request : ", e.error)
+        stack_output = hc.stacks.output_list(stack_id)
 
-    return 'Something went wrong!'
+        result = {}
+        for key, value in stack_output.items():
+            if key == 'output_key':
+                result[value] =  hc.stacks.output_show(stack_id, key)
+
+        return jsonify(result)
+    except heatclient.exc.HTTPConflict as e:
+        abort(400, 'Stack already exists : %s %s' % (e.error, stack_name))
+    except heatclient.exc.HTTPBadRequest as e:
+        abort(400, 'Bad request : %s' % e.error)
 
 
 @app.route('/qtlaas/stop')
