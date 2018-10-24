@@ -11,7 +11,7 @@ parameters:
     type: string
     label: Image name or ID
     description: Image Ansible Master
-    default: 057a1cb8-a1e0-434a-840f-fb4ad166fc1a
+    default: 382d510f-f56f-48c2-a94f-474902ac3c57
 
   image2:
     type: string
