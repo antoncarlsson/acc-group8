@@ -53,7 +53,7 @@ def write_to_ansible_hosts_file(resp):
 
         f.write('[sparkworker]' + '\n')
         f.write(resp['worker_name']['output']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu' + '\n')
-        # os.system('scp -i group8key.pem hosts ubuntu@' + resp['ansible_private_ip']['output']['output_value'] + ':/etc/ansible/hosts')
+        # os.system('scp -i group8key.pem ansible ubuntu@' + resp['ansible_private_ip']['output']['output_value'] + ':/etc/ansible/hosts')
 
 
 @app.route('/qtlaas/upload')
