@@ -17,7 +17,7 @@ parameters:
     type: string
     label: Image name or ID
     description: Image Spark Master
-    default: df481720-e7de-4c54-bcc5-cd3e53d634e5
+    default: 25f2740b-ee14-4c67-90fc-e58b86ec51bb
 
   image3:
     type: string
