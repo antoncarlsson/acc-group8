@@ -44,18 +44,14 @@ parameters:
     description: Public network with floating IP addresses.
     default: Public External IPv4 Network
 
+  cluster_sg:
+    type: string
+    label: Security group
+    description: Our QTLaaS security group
+    default: 45d66251-7c42-4b81-9a41-5c1eef18b57a
+
 # Resource allocation
 resources:
-  cluster_sg:
-    type: OS::Neutron::SecurityGroup
-    properties:
-      name: qtlaas
-      rules:
-        - protocol: icmp
-        - protocol: tcp
-          port_range_min: 22
-          port_range_max: 22
- 
   private_network:
     type: OS::Neutron::Net
 
@@ -87,31 +83,31 @@ resources:
     properties:
       network: { get_resource: private_network }
       security_groups:
-        - { get_resource: cluster_sg } 
+        - { get_param: cluster_sg } 
 
   instance_port1:
     type: OS::Neutron::Port
     properties:
       network: { get_resource: private_network }
       security_groups:
-        - { get_resource: cluster_sg } 
+        - { get_param: cluster_sg } 
 
   instance_port2:
     type: OS::Neutron::Port
     properties:
       network: { get_resource: private_network }
       security_groups:
-        - { get_resource: cluster_sg } 
+        - { get_param: cluster_sg } 
  #masters 
  
-  spark_master:
+  spark-master:
     type: OS::Nova::Server
     properties:
       image: { get_param: image2 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       # security_groups:
-      #   - { get_resource: cluster_sg }
+      #   - { get_param: cluster_sg }
       networks:
         - port: { get_resource: instance_port0 }         
       user_data: |
@@ -121,20 +117,18 @@ resources:
         apt-get update -y
         apt-get upgrade -y
         apt-get install -y ansible
-        /usr/bin/Rscript --slave --no-save --no-restore-history -e "IRkernel::installspec(user = FALSE)"
         runuser -l ubuntu -c 'jupyter notebook --ip=0.0.0.0 --port=60060 &'
         sysctl -p
-        nohup $SPARK_HOME/sbin/start-master.sh &
       user_data_format: RAW
 
-  ansible_master:
+  ansible-master:
     type: OS::Nova::Server
     properties:
       image: { get_param: image1 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       # security_groups:
-      #   - { get_resource: cluster_sg }
+      #   - { get_param: cluster_sg }
       networks:
         - port: { get_resource: instance_port1 }
       user_data: |
@@ -147,14 +141,14 @@ resources:
       
       #workers 
       
-  worker_instance0:
+  worker-instance0:
     type: OS::Nova::Server
     properties:
       image: { get_param: image3 }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       # security_groups:
-      #   - { get_resource: cluster_sg }
+      #   - { get_param: cluster_sg }
       networks:
         - port: { get_resource: instance_port2 }
       user_data: |
@@ -194,28 +188,28 @@ outputs:
 
   spark_name:
     description: Name of the spark master
-    value: { get_attr: [spark_master, name] }
+    value: { get_attr: [spark-master, name] }
   spark_ip:
     description: IP address of the instance
     value: { get_attr: [floating_ip0, floating_ip_address] }
   spark_private_ip:
     description: privateIP address of the instance
-    value: { get_attr: [spark_master, first_address] }
+    value: { get_attr: [spark-master, first_address] }
   
   ansible_name:
     description: Name of the ansible master
-    value: { get_attr: [ansible_master, name] }
+    value: { get_attr: [ansible-master, name] }
   ansible_ip:
     description: IP address of the instance
     value: { get_attr: [floating_ip1, floating_ip_address] }
   ansible_private_ip:
     description: privateIP address of the instance
-    value: { get_attr: [ansible_master, first_address] }
+    value: { get_attr: [ansible-master, first_address] }
   
   worker_name:
     description: Name of the spark worker
-    value: { get_attr: [worker_instance0, name] }
+    value: { get_attr: [worker-instance0, name] }
   worker_ip:
     description: IP address of the instance
-    value: { get_attr: [worker_instance0, first_address] }
+    value: { get_attr: [worker-instance0, first_address] }
   
