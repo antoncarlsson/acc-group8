@@ -36,15 +36,23 @@ app = Flask(__name__)
 
 def write_hosts_to_master_and_worker(resp):
     with open('upload_hosts.sh', 'w') as f:
-	f.write('scp /etc/hosts ubuntu@' + resp['worker_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
-	f.write('scp /etc/hosts ubuntu@' + resp['spark_private_ip']['output']['output_value'] + ':/etc/hosts' +'\n') 
-    time.sleep(10)    
+	f.write('scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q /etc/hosts ubuntu@' + resp['worker_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
+	f.write('scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q /etc/hosts ubuntu@' + resp['spark_private_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
+	f.write('sleep 5' +'\n')
+	f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_private_ip']['output']['output_value'] +" 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-master.sh &'" + '\n')
+	f.write('sleep 2' + '\n')
+	f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['worker_ip']['output']['output_value'] + " 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-slave.sh spark://" + resp['spark_name']['output']['output_value'] + ":7077 &'")
+	f.close()
+
+    time.sleep(10)
     path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':~/'
     filename = 'upload_hosts.sh'
-    p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
-    sts = p.wait()
-    print(sts)
-    os.system('ssh -i group8key.pem ubuntu@' + resp['ansible_ip']['output']['output_value'] +  " 'sh ~/upload_hosts.sh'")
+    sts = 1
+    while sts != 0:
+	p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
+	sts = p.wait()
+	print(sts)
+    os.system('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q  ubuntu@' + resp['ansible_ip']['output']['output_value'] +  " 'sh ~/upload_hosts.sh'")
 
 
 def write_to_hosts_file(resp):
@@ -57,9 +65,12 @@ def write_to_hosts_file(resp):
     time.sleep(10)
     path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/hosts'
     filename = 'hosts'
-    p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
-    sts = p.wait()
-    print(sts)
+    sts = 1
+    while sts != 0:
+	
+	p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
+	sts = p.wait()
+	print(sts)
     # os.system('scp -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q hosts ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/hosts')
 
 def write_to_ansible_hosts_file(resp):
@@ -75,13 +86,17 @@ def write_to_ansible_hosts_file(resp):
 
         f.write('[sparkworker]' + '\n')
         f.write(resp['worker_name']['output']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu' + '\n')
+        f.close()
 
     time.sleep(5)
     path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/ansible/hosts'
     filename = 'ansible'
-    p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
-    sts = p.wait()
-    print(sts)
+    sts = 1
+    while sts != 0:
+
+	p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
+	sts = p.wait()
+	print(sts)
     # os.system('scp -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ansible ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/ansible/hosts')
 
 
@@ -117,6 +132,7 @@ def start():
 
         write_to_hosts_file(result)
         write_to_ansible_hosts_file(result)
+	write_hosts_to_master_and_worker(result)
 
         return jsonify(result)
         # redirect('http://IP.TO.SPARK.MASTER:60060/', 302, jsonify(result))
