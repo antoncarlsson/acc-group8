@@ -34,6 +34,19 @@ hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
 
+def write_hosts_to_master_and_worker(resp):
+    with open('upload_hosts.sh', 'w') as f:
+	f.write('scp /etc/hosts ubuntu@' + resp['worker_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
+	f.write('scp /etc/hosts ubuntu@' + resp['spark_private_ip']['output']['output_value'] + ':/etc/hosts' +'\n') 
+    time.sleep(10)    
+    path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':~/'
+    filename = 'upload_hosts.sh'
+    p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
+    sts = p.wait()
+    print(sts)
+    os.system('ssh -i group8key.pem ubuntu@' + resp['ansible_ip']['output']['output_value'] +  " 'sh ~/upload_hosts.sh'")
+
+
 def write_to_hosts_file(resp):
     with open('hosts', 'w') as f:
         f.write(resp['ansible_private_ip']['output']['output_value'] + ' ' + resp['ansible_name']['output']['output_value'] + '\n')

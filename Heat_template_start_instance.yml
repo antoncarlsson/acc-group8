@@ -17,13 +17,13 @@ parameters:
     type: string
     label: Image name or ID
     description: Image Spark Master
-    default: 25f2740b-ee14-4c67-90fc-e58b86ec51bb
+    default: 98692619-5859-452c-a9cd-62f6080299cb
 
   image3:
     type: string
     label: Image name or ID
     description: Image Spark Worker
-    default: c475d079-47cd-45b0-a0dc-d77fd04d07fa
+    default: e68b26fa-6285-4a3b-b0d3-d752c53c5f14
 
 
   flavor:
@@ -121,10 +121,10 @@ resources:
         apt-get update -y
         apt-get upgrade -y
         apt-get install -y ansible
-	/usr/bin/Rscript --slave --no-save --no-restore-history -e "IRkernel::installspec(user = FALSE)"
-	runuser -l ubuntu -c 'jupyter notebook --ip=0.0.0.0 --port=60060 &'
-	sysctl -p
-	nohup $SPARK_HOME/sbin/start-master.sh &
+        /usr/bin/Rscript --slave --no-save --no-restore-history -e "IRkernel::installspec(user = FALSE)"
+        runuser -l ubuntu -c 'jupyter notebook --ip=0.0.0.0 --port=60060 &'
+        sysctl -p
+        nohup $SPARK_HOME/sbin/start-master.sh &
       user_data_format: RAW
 
   ansible_master:
@@ -162,7 +162,7 @@ resources:
         echo "Hello, World!"
         apt-get update -y
         apt-get upgrade -y
-	sysctl -p
+        sysctl -p
       user_data_format: RAW
       
 
