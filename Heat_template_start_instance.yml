@@ -121,6 +121,10 @@ resources:
         apt-get update -y
         apt-get upgrade -y
         apt-get install -y ansible
+	/usr/bin/Rscript --slave --no-save --no-restore-history -e "IRkernel::installspec(user = FALSE)"
+	runuser -l ubuntu -c 'jupyter notebook --ip=0.0.0.0 --port=60060 &'
+	sysctl -p
+	nohup $SPARK_HOME/sbin/start-master.sh &
       user_data_format: RAW
 
   ansible_master:
@@ -158,6 +162,7 @@ resources:
         echo "Hello, World!"
         apt-get update -y
         apt-get upgrade -y
+	sysctl -p
       user_data_format: RAW
       
 
