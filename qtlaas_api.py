@@ -8,6 +8,7 @@ import sys
 from getpass import getpass
 import time
 import os
+import subprocess
 
 keystone_settings = {
 	'auth_url': 'https://uppmax.cloud.snic.se:5000/v3',
@@ -38,7 +39,15 @@ def write_to_hosts_file(resp):
         f.write(resp['ansible_private_ip']['output']['output_value'] + ' ' + resp['ansible_name']['output']['output_value'] + '\n')
         f.write(resp['spark_private_ip']['output']['output_value'] + ' ' + resp['spark_name']['output']['output_value'] + '\n')
         f.write(resp['worker_ip']['output']['output_value'] + ' ' + resp['worker_name']['output']['output_value'] + '\n')
-        os.system('scp -i group8key.pem hosts ubuntu@' + resp['ansible_private_ip']['output']['output_value'] + ':/etc/hosts')
+        f.close()
+
+    time.sleep(10)
+    path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/hosts'
+    filename = 'hosts'
+    p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
+    sts = p.wait()
+    print(sts)
+    # os.system('scp -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q hosts ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/hosts')
 
 def write_to_ansible_hosts_file(resp):
     with open('ansible', 'w') as f:
@@ -53,7 +62,14 @@ def write_to_ansible_hosts_file(resp):
 
         f.write('[sparkworker]' + '\n')
         f.write(resp['worker_name']['output']['output_value'] + ' ansible_connection=ssh ansible_user=ubuntu' + '\n')
-        os.system('scp -i group8key.pem ansible ubuntu@' + resp['ansible_private_ip']['output']['output_value'] + ':/etc/ansible/hosts')
+
+    time.sleep(5)
+    path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/ansible/hosts'
+    filename = 'ansible'
+    p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
+    sts = p.wait()
+    print(sts)
+    # os.system('scp -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ansible ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/ansible/hosts')
 
 
 @app.route('/qtlaas/upload')
