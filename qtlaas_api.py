@@ -29,7 +29,7 @@ kwargs = {
     'auth': keystone_auth,
     'service_type': 'orchestration'
 }
-stack_name = sys.argv[2]
+# stack_name = sys.argv[2]
 hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
@@ -106,8 +106,8 @@ def write_to_ansible_hosts_file(resp):
 def upload_file():
     return 'TODO: inject files through API'
 
-@app.route('/qtlaas/start')
-def start():
+@app.route('/qtlaas/start/<string:stack_name>', methods=['GET'])
+def start(stack_name):
     global stack_active
     template_name = 'Heat_template_start_instance.yml'
     files, template = template_utils.process_template_path(template_name)
@@ -141,7 +141,7 @@ def start():
         write_to_ansible_hosts_file(result)
         write_hosts_to_master_and_worker(result)
 
-        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['ansible_ip']['output']['output_value'] +  " 'echo ~/token.txt'")
+        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + result['ansible_ip']['output']['output_value'] +  " 'echo ~/token.txt'")
         result['token'] = token
 
         return jsonify(result)
@@ -156,7 +156,7 @@ def start():
 def stop():
     global stack_active
 
-    if not stack_acttive:
+    if not stack_active:
         abort(400, 'No stack is active')
 
     stacks = hc.stacks.list(filters={'stack_name': stack_name})
