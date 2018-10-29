@@ -12,7 +12,6 @@ import subprocess
 
 keystone_settings = {
 	'auth_url': 'https://uppmax.cloud.snic.se:5000/v3',
-#	'region_name': 'UPPMAX',
 	'project_id': '2344cddf33a1412b846290a9fb90b762',
 	'project_name': 'SNIC 2018/10-30',
 	'user_domain_name': 'snic',
@@ -29,7 +28,7 @@ kwargs = {
     'auth': keystone_auth,
     'service_type': 'orchestration'
 }
-# stack_name = sys.argv[2]
+
 hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
@@ -58,7 +57,6 @@ def write_hosts_to_master_and_worker(resp):
         print(sts)
     os.system('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q  ubuntu@' + resp['ansible_ip']['output']['output_value'] +  " 'sh ~/upload_hosts.sh'")
 
-
 def write_to_hosts_file(resp):
     with open('hosts', 'w') as f:
         f.write(resp['ansible_private_ip']['output']['output_value'] + ' ' + resp['ansible_name']['output']['output_value'] + '\n')
@@ -74,7 +72,6 @@ def write_to_hosts_file(resp):
         p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
         sts = p.wait()
         print(sts)
-    # os.system('scp -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q hosts ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/hosts')
 
 def write_to_ansible_hosts_file(resp):
     with open('ansible', 'w') as f:
@@ -99,12 +96,6 @@ def write_to_ansible_hosts_file(resp):
 	    p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
 	    sts = p.wait()
 	    print(sts)
-    # os.system('scp -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ansible ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':/etc/ansible/hosts')
-
-
-@app.route('/qtlaas/upload')
-def upload_file():
-    return 'TODO: inject files through API'
 
 @app.route('/qtlaas/start/<string:stack_name>', methods=['GET'])
 def start(stack_name):
@@ -154,7 +145,6 @@ def start(stack_name):
     except heatclient.exc.HTTPBadRequest as e:
         abort(400, 'Bad request : %s' % e.error)
 
-
 @app.route('/qtlaas/stop')
 def stop():
     global stack_active
@@ -167,20 +157,6 @@ def stop():
     hc.stacks.delete(stack_id)
     stack_active = False
     return 'Deletion complete'
-
-@app.route('/qtlaas/workers')
-def number_of_workers():
-    return 'TODO: Return number of workers'
-
-@app.route('/qtlaas/workers/<int:no_workers>', methods=['POST', 'DELETE'])
-def resize(no_workers):
-    if no_workers < 1:
-        abort(400, 'Too few workers to be added/removed.')
-    else: 
-        if request.method == 'POST':
-            return 'TODO: Add workers'
-        else: # DELETE
-            return 'TODO: Remove workers'
 
 
 if __name__=='__main__':
