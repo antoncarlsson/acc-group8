@@ -45,11 +45,7 @@ def write_hosts_to_master_and_worker(resp):
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['worker_ip']['output']['output_value'] + " 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-slave.sh spark://" + resp['spark_name']['output']['output_value'] + ":7077 &'" + '\n')
         f.close()
 
-    command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
-    with open('get_token.sh', 'w') as f:
-        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_ip']['output']['output_value'] + command + '\n')
- 
-    time.sleep(10)
+    time.sleep(5)
     path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':~/'
     filename = 'upload_hosts.sh'
     sts = 1
@@ -58,6 +54,21 @@ def write_hosts_to_master_and_worker(resp):
         sts = p.wait()
         print(sts)
     os.system('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q  ubuntu@' + resp['ansible_ip']['output']['output_value'] +  " 'sh ~/upload_hosts.sh'")
+
+    command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
+    with open('get_token.sh', 'w') as f:
+        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_ip']['output']['output_value'] + command + '\n')
+
+    time.sleep(5)
+    path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':~/'
+    filename = 'get_token.sh'
+    sts = 1
+    while sts != 0:
+        p = subprocess.Popen('scp -v -v -v -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ' + filename + ' ' + path, shell=True)
+        sts = p.wait()
+        print(sts)
+
+ 
 
 def write_to_hosts_file(resp):
     with open('hosts', 'w') as f:
