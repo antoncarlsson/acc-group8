@@ -44,8 +44,8 @@ def write_hosts_to_master_and_worker(resp):
         f.write('sleep 5' +'\n')
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_private_ip']['output']['output_value'] +" 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-master.sh &'" + '\n')
         f.write('sleep 2' + '\n')
-        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['worker_ip']['output']['output_value'] + " 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-slave.sh spark://" + resp['spark_name']['output']['output_value'] + ":7077 &'")
-        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_ip']['output']['output_value'] + command + ' > token.txt')
+        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['worker_ip']['output']['output_value'] + " 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-slave.sh spark://" + resp['spark_name']['output']['output_value'] + ":7077 &'" + '\n')
+        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_ip']['output']['output_value'] + command + ' > token.txt' + '\n')
         f.close()
 
     time.sleep(10)
@@ -109,6 +109,9 @@ def upload_file():
 @app.route('/qtlaas/start/<string:stack_name>', methods=['GET'])
 def start(stack_name):
     global stack_active
+    global stackname
+    stackname = stack_name
+
     template_name = 'Heat_template_start_instance.yml'
     files, template = template_utils.process_template_path(template_name)
 
@@ -141,7 +144,7 @@ def start(stack_name):
         write_to_ansible_hosts_file(result)
         write_hosts_to_master_and_worker(result)
 
-        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + result['ansible_ip']['output']['output_value'] +  " 'echo ~/token.txt'")
+        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + result['ansible_ip']['output']['output_value'] +  " 'cat ~/token.txt'")
         result['token'] = token
 
         return jsonify(result)
@@ -159,7 +162,7 @@ def stop():
     if not stack_active:
         abort(400, 'No stack is active')
 
-    stacks = hc.stacks.list(filters={'stack_name': stack_name})
+    stacks = hc.stacks.list(filters={'stack_name': stackname})
     stack_id = next(stacks).id
     hc.stacks.delete(stack_id)
     stack_active = False
