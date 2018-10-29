@@ -34,6 +34,8 @@ hc = heat_client.Client('1', **kwargs)
 
 app = Flask(__name__)
 
+stack_active = False
+
 def write_hosts_to_master_and_worker(resp):
     command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
     with open('upload_hosts.sh', 'w') as f:
@@ -43,7 +45,7 @@ def write_hosts_to_master_and_worker(resp):
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_private_ip']['output']['output_value'] +" 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-master.sh &'" + '\n')
         f.write('sleep 2' + '\n')
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['worker_ip']['output']['output_value'] + " 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-slave.sh spark://" + resp['spark_name']['output']['output_value'] + ":7077 &'")
-        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + result['spark_ip']['output']['output_value'] + command + ' > token.txt')
+        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_ip']['output']['output_value'] + command + ' > token.txt')
         f.close()
 
     time.sleep(10)
@@ -106,8 +108,12 @@ def upload_file():
 
 @app.route('/qtlaas/start')
 def start():
+    global stack_active
     template_name = 'Heat_template_start_instance.yml'
     files, template = template_utils.process_template_path(template_name)
+
+    if stack_active:
+        abort(400, 'A stack is already active')
 
     try:
         hc.stacks.create(stack_name=stack_name, template=template, files=files)
@@ -125,6 +131,7 @@ def start():
             time.sleep(5)
             stack_status = stack.status
 
+        stack_active = True
         result = {}
         for line in stack_output['outputs']:
             output_value = line['output_key']
@@ -147,9 +154,15 @@ def start():
 
 @app.route('/qtlaas/stop')
 def stop():
+    global stack_active
+
+    if not stack_acttive:
+        abort(400, 'No stack is active')
+
     stacks = hc.stacks.list(filters={'stack_name': stack_name})
     stack_id = next(stacks).id
     hc.stacks.delete(stack_id)
+    stack_active = False
     return 'Deletion complete'
 
 @app.route('/qtlaas/workers')
