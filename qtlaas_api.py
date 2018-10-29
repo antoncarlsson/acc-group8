@@ -36,7 +36,6 @@ app = Flask(__name__)
 stack_active = False
 
 def write_hosts_to_master_and_worker(resp):
-    command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
     with open('upload_hosts.sh', 'w') as f:
         f.write('scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q /etc/hosts ubuntu@' + resp['worker_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
         f.write('scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q /etc/hosts ubuntu@' + resp['spark_private_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
@@ -44,9 +43,12 @@ def write_hosts_to_master_and_worker(resp):
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_private_ip']['output']['output_value'] +" 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-master.sh &'" + '\n')
         f.write('sleep 2' + '\n')
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['worker_ip']['output']['output_value'] + " 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-slave.sh spark://" + resp['spark_name']['output']['output_value'] + ":7077 &'" + '\n')
-        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_ip']['output']['output_value'] + command + ' > token.txt' + '\n')
         f.close()
 
+    command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
+    with open('get_token.sh', 'w') as f:
+        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_ip']['output']['output_value'] + command + '\n')
+ 
     time.sleep(10)
     path = 'ubuntu@' + resp['ansible_ip']['output']['output_value'] + ':~/'
     filename = 'upload_hosts.sh'
@@ -135,7 +137,7 @@ def start(stack_name):
         write_to_ansible_hosts_file(result)
         write_hosts_to_master_and_worker(result)
 
-        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + result['ansible_ip']['output']['output_value'] +  " 'cat ~/token.txt'")
+        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + result['ansible_ip']['output']['output_value'] +  " 'sh ~/get_token.sh'")
         result['token'] = token
 
         return jsonify(result)
