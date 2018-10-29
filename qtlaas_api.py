@@ -132,8 +132,9 @@ def start():
         write_to_ansible_hosts_file(result)
         write_hosts_to_master_and_worker(result)
 
-        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q  ubuntu@' + resp['spark_ip']['output']['output_value'] +  " 'jupyter notebook list | grep -Po \'=(.*?) \' | sed \'s/=//g\''")
-        result['token'] = token
+        # command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
+        # token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q  ubuntu@' + result['spark_ip']['output']['output_value'] + command)
+        # result['token'] = token
 
         return jsonify(result)
         # redirect('http://IP.TO.SPARK.MASTER:60060/', 302, jsonify(result))
