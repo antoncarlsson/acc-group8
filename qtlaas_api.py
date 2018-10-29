@@ -35,6 +35,7 @@ hc = heat_client.Client('1', **kwargs)
 app = Flask(__name__)
 
 def write_hosts_to_master_and_worker(resp):
+    command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
     with open('upload_hosts.sh', 'w') as f:
         f.write('scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q /etc/hosts ubuntu@' + resp['worker_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
         f.write('scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q /etc/hosts ubuntu@' + resp['spark_private_ip']['output']['output_value'] + ':/etc/hosts' +'\n')
@@ -42,6 +43,7 @@ def write_hosts_to_master_and_worker(resp):
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['spark_private_ip']['output']['output_value'] +" 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-master.sh &'" + '\n')
         f.write('sleep 2' + '\n')
         f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['worker_ip']['output']['output_value'] + " 'sudo nohup /usr/local/spark-2.2.2-bin-hadoop2.6/sbin/start-slave.sh spark://" + resp['spark_name']['output']['output_value'] + ":7077 &'")
+        f.write('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + result['spark_ip']['output']['output_value'] + command + ' > token.txt')
         f.close()
 
     time.sleep(10)
@@ -132,9 +134,8 @@ def start():
         write_to_ansible_hosts_file(result)
         write_hosts_to_master_and_worker(result)
 
-        # command = ' "jupyter notebook list | ' + "grep -Po '=(.*?) ' | " + "sed 's/=//g'" + '"'
-        # token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q  ubuntu@' + result['spark_ip']['output']['output_value'] + command)
-        # result['token'] = token
+        token = subprocess.check_output('ssh -i group8key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q ubuntu@' + resp['ansible_ip']['output']['output_value'] +  " 'echo ~/token.txt'")
+        result['token'] = token
 
         return jsonify(result)
         # redirect('http://IP.TO.SPARK.MASTER:60060/', 302, jsonify(result))
